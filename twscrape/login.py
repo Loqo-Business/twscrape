@@ -10,6 +10,7 @@ from .account import Account
 from .imap import imap_get_email_code, imap_login
 from .logger import logger
 from .utils import utc
+from .xclid import XClIdGen
 
 LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json"
 
@@ -261,6 +262,9 @@ async def login(acc: Account, cfg: LoginConfig | None = None) -> Account:
     async with acc.make_client() as client:
         guest_token = await get_guest_token(client)
         client.headers["x-guest-token"] = guest_token
+
+        clid_gen = await XClIdGen.create()
+        client.headers["x-client-transaction-id"] = clid_gen.calc('POST', '/1.1/onboarding/task.json')
 
         rep = await login_initiate(client)
         ctx = TaskCtx(client, acc, cfg, None, imap)
